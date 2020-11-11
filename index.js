@@ -13,6 +13,9 @@ mongoose.connect("mongodb://localhost/airbnb", {
 
 const appRoute = require("./route/user");
 app.use(appRoute);
+
+const appRoom = require("./route/room");
+app.use(appRoom);
 app.listen(3000, () => {
   console.log("server hes started ");
 });
