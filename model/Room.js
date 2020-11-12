@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const Room = mongoose.model("Room", {
-  photos: Array,
+  picture: Array,
   location: Array,
   title: String,
   description: String,

@@ -8,6 +8,10 @@ const User = mongoose.model("User", {
   token: String,
   salt: String,
   hash: String,
+  account: {
+    photo: { url: { type: mongoose.Schema.Types.Mixed }, picture_id: String },
+  },
+  rooms: { type: Array, default: [] },
 });
 
 module.exports = User;
