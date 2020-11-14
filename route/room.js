@@ -19,7 +19,12 @@ router.post("/room/publish", isAuthentificated, async (req, res) => {
     });
     newRoom.location.push(req.fields.location.lat);
     newRoom.location.push(req.fields.location.lng);
+    const user = req.user;
 
+    user.rooms.push(newRoom);
+    //console.log(user.rooms);
+    user.markModified("rooms");
+    user.save();
     newRoom.save();
 
     res.status(200).json(newRoom);
@@ -132,4 +137,49 @@ router.delete(
     }
   }
 );
+
+router.get("//rooms", isAuthentificated, async (req, res) => {
+  console.log("route://rooms");
+  try {
+    let filter = {};
+    if (req.query.title) {
+      filter.title = new RegExp(req.query.title, "i");
+    }
+    if (req.query.pricemin) {
+      filter.price = { $gte: req.query.pricemin };
+    }
+    if (req.query.pricemax) {
+      if (filter.price) {
+        filter.price.$lte = req.query.pricemax;
+      } else {
+        filter.price = { $lte: req.query.pricemax };
+      }
+    }
+    if (req.query.sort) {
+    }
+    let sort = {};
+    if (req.query.sort === "price-asc") {
+      sort = { price: 1 };
+    } else if (req.query.sort === "price-desc") {
+      sort = { price: -1 };
+    }
+    let page;
+    let limit = Number(req.query.limit);
+    if (Number(req.query.page < 1)) {
+      page = 1;
+    } else {
+      page = Number(req.query.page);
+    }
+
+    const find = await Room.find(filter)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const count = await Room.countDocuments(filter);
+    res.status(200).json({ count: count, find: find });
+  } catch (error) {
+    console.log(error.message);
+  }
+});
 module.exports = router;

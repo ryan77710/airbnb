@@ -11,7 +11,9 @@ const User = mongoose.model("User", {
   account: {
     photo: { url: { type: mongoose.Schema.Types.Mixed }, picture_id: String },
   },
-  rooms: { type: Array, default: [] },
+  rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Room" }],
+  tokentemp: String,
+  dateNow: Number,
 });
 
 module.exports = User;

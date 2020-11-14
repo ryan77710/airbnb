@@ -6,12 +6,12 @@ const uid2 = require("uid2");
 const SHA256 = require("crypto-js/sha256");
 const encBase64 = require("crypto-js/enc-base64");
 const isAuthentificated = require("../midelware/isAuthentificated");
+const { findOne } = require("../model/User");
 const cloudinary = require("cloudinary").v2;
-// cloudinary.config({
-//   cloud_name: "ryan777",
-//   api_key: "956563211989325",
-//   api_secret: "fh6XdWLkFNCrwTu4Qf4MKyTPJ4A",
-// });
+const api_key = "b557e525dec5c2a8a86e2bae04a782c7-ba042922-9afee0ec";
+const domain = "sandbox28ad3ab9d21146c699ae2965a6bbd9a6.mailgun.org";
+const mailgun = require("mailgun-js")({ apiKey: api_key, domain: domain });
+
 router.post("/sign-up", async (req, res) => {
   console.log("route: /sign-up");
   try {
@@ -108,5 +108,125 @@ router.delete(
     }
   }
 );
+router.get("/users/:id", async (req, res) => {
+  console.log("route : /users/:id");
+  const find = await User.findById(req.params.id).select(
+    "_id account username name description photo rooms"
+  );
+  res.status(200).json(find);
+  try {
+  } catch (error) {
+    console.log(error.message);
+  }
+});
 
+router.get("/user/rooms/:id", async (req, res) => {
+  console.log("route: /user/rooms/:id");
+  try {
+    const find = await Room.find({ user: req.params.id });
+    res.status(200).json(find);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+router.put("/user/update", isAuthentificated, async (req, res) => {
+  console.log("route : /user/update");
+  try {
+    const find = await User.findOne(req.user);
+    const { email, name, description, username } = req.fields;
+    if (email) {
+      find.email = req.fields.email;
+    }
+    if (name) {
+      find.name = req.fields.name;
+    }
+    if (description) {
+      find.description = req.fields.description;
+    }
+    if (username) {
+      find.username = req.fields.username;
+    }
+
+    console.log(find);
+    find.save();
+    res.status(200).json(find);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+router.put("/user/update_password", async (req, res) => {
+  console.log("route : /user/update_password");
+  try {
+    const email = req.fields.email;
+    const find = await User.findOne({ email: email });
+    const tokentemp = uid2(64);
+    const dateNow = Date.now();
+    find.tokentemp = tokentemp;
+    find.dateNow = dateNow;
+    find.save();
+
+    //console.log("send email with tokentemp and link", tokentemp);
+
+    let data = {
+      from: "gg <ryanlollia77@gmail.com>",
+      to: "ryanlollia77@gmail.com",
+      subject: "Hello",
+      text: "your going to be modify reset it whith the link",
+    };
+
+    mailgun.messages().send(data, (error, body) => {
+      // mailgun ne s'affiche pas en vert
+      console.log(body); // me renvoi "indefined" en error et body
+    });
+    res.status(200).json({ message: "A link has been sent to the user" });
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+router.put("/user/reset_password/", async (req, res) => {
+  console.log("route : //user/reset_password/");
+  try {
+    const find = await User.findOne({ tokentemp: req.fields.tokentemp });
+    const dateLast = find.dateNow + 900000;
+    const datenow = Date.now();
+
+    if (datenow > dateLast) {
+      res.status(400).json({ message: "you have 15 min for change password" });
+    } else {
+      const salt = uid2(64);
+      const hash = SHA256(req.fields.password + salt).toString(encBase64);
+      find.salt = salt;
+      find.hash = hash;
+      find.dateNow = undefined;
+      find.tokentemp = undefined;
+      find.save();
+      res.status(200).json({ message: "password change" });
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+router.delete("/user/delete", isAuthentificated, async (req, res) => {
+  console.log("route : /user/delete");
+  try {
+    const find = await User.findById(req.fields.id);
+    const tab = find.rooms;
+    for (let i = 0; i < tab.length; i++) {
+      console.log(tab[i]);
+      const deletee = await Room.findById(tab[i]);
+      if (deletee) {
+        deletee.deleteOne();
+      } else {
+      }
+    }
+    find.deleteOne();
+
+    res.status(200).json({ message: "user deleted" });
+  } catch (error) {
+    console.log(error.message);
+  }
+});
 module.exports = router;
