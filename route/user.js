@@ -190,20 +190,26 @@ router.put("/user/reset_password/", async (req, res) => {
   console.log("route : //user/reset_password/");
   try {
     const find = await User.findOne({ tokentemp: req.fields.tokentemp });
-    const dateLast = find.dateNow + 900000;
-    const datenow = Date.now();
+    if (find) {
+      const dateLast = find.dateNow + 900000;
+      const datenow = Date.now();
 
-    if (datenow > dateLast) {
-      res.status(400).json({ message: "you have 15 min for change password" });
+      if (datenow > dateLast) {
+        res
+          .status(400)
+          .json({ message: "you have 15 min for change password" });
+      } else {
+        const salt = uid2(64);
+        const hash = SHA256(req.fields.password + salt).toString(encBase64);
+        find.salt = salt;
+        find.hash = hash;
+        find.dateNow = undefined;
+        find.tokentemp = undefined;
+        find.save();
+        res.status(200).json({ message: "password change" });
+      }
     } else {
-      const salt = uid2(64);
-      const hash = SHA256(req.fields.password + salt).toString(encBase64);
-      find.salt = salt;
-      find.hash = hash;
-      find.dateNow = undefined;
-      find.tokentemp = undefined;
-      find.save();
-      res.status(200).json({ message: "password change" });
+      res.status(400).json({ message: "account not found" });
     }
   } catch (error) {
     console.log(error.message);
