@@ -194,5 +194,69 @@ router.get("//rooms", isAuthentificated, async (req, res) => {
   }
 });
 
-//route.get("/rooms/around", isAuthentificated);
+router.get("/roomss", async (req, res) => {
+  console.log("route : /roomss");
+  try {
+    //const { title, pricemax, pricemin, sort, page, limit } = req.query;
+    let filter = {};
+    if (req.query.title) {
+      filter.title = new RegExp(req.query.title, "i");
+    }
+    if (req.query.pricemin) {
+      filter.price = { $gte: req.query.pricemin };
+    }
+    if (req.query.pricemax) {
+      if (filter.price) {
+        filter.price.$lte = req.query.pricemax;
+      } else {
+        filter.price = { $lte: req.query.pricemax };
+      }
+    }
+    //console.log(filter);
+    let sort = {};
+    if (req.query.sort) {
+      if (req.query.sort === "price-asc") {
+        sort = { price: 1 };
+      } else if (req.query.sort === "price-desc") {
+        sort = { price: -1 };
+      }
+    }
+    let page;
+    let limit = Number(req.query.limit);
+    if (Number(req.query.page < 1)) {
+      page = 1;
+    } else {
+      page = Number(req.query.page);
+    }
+    const find = await Room.find(filter)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    if (
+      !req.query.title &&
+      !req.query.pricemin &&
+      !req.query.pricemax &&
+      !req.query.sort &&
+      !req.query.page &&
+      !req.query.limit
+    ) {
+      const tab1 = [];
+      for (let i = 0; i < 20; i++) {
+        var rand = find[Math.floor(Math.random() * find.length)];
+
+        if (tab1.indexOf(rand) === -1) {
+          tab1.push(rand);
+        } else {
+          i--;
+        }
+      }
+      res.status(200).json(tab1);
+    } else {
+      res.status(200).json(find);
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+});
 module.exports = router;
