@@ -5,6 +5,7 @@ const Room = require("../model/Room");
 const isAuthentificated = require("../midelware/isAuthentificated");
 const { find } = require("../model/User");
 const uid2 = require("uid2");
+const { route } = require("./user");
 const cloudinary = require("cloudinary").v2;
 
 router.post("/room/publish", isAuthentificated, async (req, res) => {
@@ -49,23 +50,33 @@ router.put("/room/update/:id", isAuthentificated, async (req, res) => {
   const { title, description, price } = req.fields;
   try {
     const find = await Room.findById(req.params.id);
-    if (title) {
-      find.title = title;
-    }
+    //console.log(find.user);
+    const verif = await User.findById(find.user);
+    const tokenNow = (token = req.headers.authorization.replace("Bearer ", ""));
+    if (verif.token === tokenNow) {
+      if (title) {
+        find.title = title;
+      }
 
-    if (description) {
-      find.description = description;
+      if (description) {
+        find.description = description;
+      }
+      if (price) {
+        find.price = price;
+      }
+      if (req.fields.location) {
+        find.location[0] = req.fields.location.lat;
+        find.location[1] = req.fields.location.lng;
+        find.markModified("location");
+      }
+
+      find.save();
+      res.status(200).json("room update");
+    } else {
+      res
+        .status(400)
+        .json({ message: "you can't modify a room that is not yours" });
     }
-    if (price) {
-      find.price = price;
-    }
-    if (req.fields.location) {
-      find.location[0] = req.fields.location.lat;
-      find.location[1] = req.fields.location.lng;
-    }
-    find.markModified("location");
-    find.save();
-    res.status(200).json("room update");
   } catch (error) {
     console.log(error.message);
   }
@@ -182,4 +193,6 @@ router.get("//rooms", isAuthentificated, async (req, res) => {
     console.log(error.message);
   }
 });
+
+//route.get("/rooms/around", isAuthentificated);
 module.exports = router;
