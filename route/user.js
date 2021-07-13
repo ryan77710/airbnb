@@ -8,8 +8,8 @@ const encBase64 = require("crypto-js/enc-base64");
 const isAuthentificated = require("../midelware/isAuthentificated");
 const { findOne } = require("../model/User");
 const cloudinary = require("cloudinary").v2;
-const api_key = "b557e525dec5c2a8a86e2bae04a782c7-ba042922-9afee0ec";
-const domain = "sandbox28ad3ab9d21146c699ae2965a6bbd9a6.mailgun.org";
+// const api_key = "b557e525dec5c2a8a86e2bae04a782c7-ba042922-9afee0ec";
+// const domain = "sandbox28ad3ab9d21146c699ae2965a6bbd9a6.mailgun.org";
 const mailgun = require("mailgun-js")({ apiKey: api_key, domain: domain });
 
 router.post("/sign-up", async (req, res) => {
@@ -40,13 +40,12 @@ router.post("/sign-up", async (req, res) => {
         const new1 = await User.find(newUser).select(
           "email token username name description"
         );
-        console.log("account user created");
 
         res.status(200).json(new1);
       }
     }
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -66,7 +65,7 @@ router.post("/log-in", async (req, res) => {
       }
     }
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 router.put("/user/upload_picture/:id", isAuthentificated, async (req, res) => {
@@ -85,7 +84,7 @@ router.put("/user/upload_picture/:id", isAuthentificated, async (req, res) => {
 
     res.status(200).json(find);
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -104,7 +103,7 @@ router.delete(
       find.save();
       res.status(200).json({ message: "ok" });
     } catch (error) {
-      console.log(error.message);
+      res.status(400).json(error.message);
     }
   }
 );
@@ -116,7 +115,7 @@ router.get("/users/:id", async (req, res) => {
   res.status(200).json(find);
   try {
   } catch (error) {
-    console.log(error.message);
+    res.status(200).json(error.message);
   }
 });
 
@@ -126,7 +125,7 @@ router.get("/user/rooms/:id", async (req, res) => {
     const find = await Room.find({ user: req.params.id });
     res.status(200).json(find);
   } catch (error) {
-    console.log(error.message);
+    res.status(200).json(error.message);
   }
 });
 
@@ -148,11 +147,10 @@ router.put("/user/update", isAuthentificated, async (req, res) => {
       find.username = req.fields.username;
     }
 
-    console.log(find);
     find.save();
     res.status(200).json(find);
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -167,8 +165,6 @@ router.put("/user/update_password", async (req, res) => {
     find.dateNow = dateNow;
     find.save();
 
-    //console.log("send email with tokentemp and link", tokentemp);
-
     let data = {
       from: "gg <ryanlollia77@gmail.com>",
       to: "ryanlollia77@gmail.com",
@@ -176,13 +172,10 @@ router.put("/user/update_password", async (req, res) => {
       text: "your going to be modify reset it whith the link",
     };
 
-    mailgun.messages().send(data, (error, body) => {
-      // mailgun ne s'affiche pas en vert
-      console.log(body); // me renvoi "indefined" en error et body
-    });
+    mailgun.messages().send(data, (error, body) => {});
     res.status(200).json({ message: "A link has been sent to the user" });
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -212,7 +205,7 @@ router.put("/user/reset_password/", async (req, res) => {
       res.status(400).json({ message: "account not found" });
     }
   } catch (error) {
-    console.log(error.message);
+    res.status(200).json(error.message);
   }
 });
 router.delete("/user/delete", isAuthentificated, async (req, res) => {
@@ -221,7 +214,6 @@ router.delete("/user/delete", isAuthentificated, async (req, res) => {
     const find = await User.findById(req.fields.id);
     const tab = find.rooms;
     for (let i = 0; i < tab.length; i++) {
-      console.log(tab[i]);
       const deletee = await Room.findById(tab[i]);
       if (deletee) {
         deletee.deleteOne();
@@ -232,7 +224,7 @@ router.delete("/user/delete", isAuthentificated, async (req, res) => {
 
     res.status(200).json({ message: "user deleted" });
   } catch (error) {
-    console.log(error.message);
+    res.status(200).json(error.message);
   }
 });
 module.exports = router;

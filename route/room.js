@@ -23,14 +23,13 @@ router.post("/room/publish", isAuthentificated, async (req, res) => {
     const user = req.user;
 
     user.rooms.push(newRoom);
-    //console.log(user.rooms);
     user.markModified("rooms");
     user.save();
     newRoom.save();
 
     res.status(200).json(newRoom);
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -40,7 +39,7 @@ router.get("/rooms/", isAuthentificated, async (req, res) => {
     const find = await Room.findById(req.query.id);
     res.status(200).json(find);
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -50,7 +49,6 @@ router.put("/room/update/:id", isAuthentificated, async (req, res) => {
   const { title, description, price } = req.fields;
   try {
     const find = await Room.findById(req.params.id);
-    //console.log(find.user);
     const verif = await User.findById(find.user);
     const tokenNow = (token = req.headers.authorization.replace("Bearer ", ""));
     if (verif.token === tokenNow) {
@@ -78,7 +76,7 @@ router.put("/room/update/:id", isAuthentificated, async (req, res) => {
         .json({ message: "you can't modify a room that is not yours" });
     }
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
@@ -90,7 +88,7 @@ router.delete("/room/delete/:id", isAuthentificated, async (req, res) => {
     find.deleteOne();
     res.status(200).json({ message: "room deleted" });
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 router.put("/room/upload_picture/:id", isAuthentificated, async (req, res) => {
@@ -190,14 +188,13 @@ router.get("//rooms", isAuthentificated, async (req, res) => {
     const count = await Room.countDocuments(filter);
     res.status(200).json({ count: count, find: find });
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 
 router.get("/roomss", async (req, res) => {
   console.log("route : /roomss");
   try {
-    //const { title, pricemax, pricemin, sort, page, limit } = req.query;
     let filter = {};
     if (req.query.title) {
       filter.title = new RegExp(req.query.title, "i");
@@ -212,7 +209,6 @@ router.get("/roomss", async (req, res) => {
         filter.price = { $lte: req.query.pricemax };
       }
     }
-    //console.log(filter);
     let sort = {};
     if (req.query.sort) {
       if (req.query.sort === "price-asc") {
@@ -256,7 +252,7 @@ router.get("/roomss", async (req, res) => {
       res.status(200).json(find);
     }
   } catch (error) {
-    console.log(error.message);
+    res.status(400).json(error.message);
   }
 });
 module.exports = router;
